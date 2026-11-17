@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Liguria Launch Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: one synoptic board. Each launch is a row: identity + verdict on the left,
+   an hour-by-hour daylight strip on the right; rows stack on phones. */
+:root {
+  --bg: #eef2f5;
+  --surface: #ffffff;
+  --ink: #14212e;
+  --muted: #5b6b7a;
+  --line: #d3dbe2;
+  --accent: #d9480f;          /* windsock orange */
+  --go: #1f8a4c;
+  --go-bg: #cfeedd;
+  --marg: #a86400;
+  --marg-bg: #fde6b8;
+  --no: #7a8590;
+  --no-bg: #e4e9ed;
+  --stop: #b3261e;
+  --stop-bg: #f7d9d6;
+  --rain: #1c6fb5;
+  --font-display: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0f1820; --surface: #17232e; --ink: #e6edf2; --muted: #93a3b1; --line: #2a3a48;
+    --accent: #ff8a4c;
+    --go: #5fd391; --go-bg: #14432a;
+    --marg: #f2b84b; --marg-bg: #4a3608;
+    --no: #7f8d9a; --no-bg: #1f2c38;
+    --stop: #ff8a80; --stop-bg: #4a1c19; --rain: #6db6f2;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0f1820; --surface: #17232e; --ink: #e6edf2; --muted: #93a3b1; --line: #2a3a48;
+  --accent: #ff8a4c;
+  --go: #5fd391; --go-bg: #14432a;
+  --marg: #f2b84b; --marg-bg: #4a3608;
+  --no: #7f8d9a; --no-bg: #1f2c38;
+  --stop: #ff8a80; --stop-bg: #4a1c19; --rain: #6db6f2;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+}
+.wrap { max-width: 1080px; margin: 0 auto; padding: 20px 16px 48px; display: flex; flex-direction: column; gap: 16px; }
+h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; letter-spacing: .01em; }
+h1 { font-size: 34px; font-weight: 700; line-height: 1.05; text-transform: uppercase; }
+h1 span { color: var(--accent); }
+h2 { font-size: 20px; font-weight: 600; text-transform: uppercase; }
+p { margin: 0; }
+a { color: var(--accent); }
+.lede { color: var(--muted); max-width: 65ch; }
+header { display: flex; flex-direction: column; gap: 8px; }
+
+.status { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 6px;
+  border: 1px solid var(--line); background: var(--surface); font-size: 14px; }
+.status .dot { flex: none; width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; background: var(--no); }
+.status.live .dot { background: var(--go); }
+.status.demo { border-color: var(--marg); background: var(--marg-bg); }
+.status.demo .dot { background: var(--marg); }
+.status b { font-weight: 600; }
+
+.controls { display: flex; flex-direction: column; gap: 10px; }
+.tabs, .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+.tab, .chip {
+  border: 1px solid var(--line); background: var(--surface); border-radius: 6px;
+  padding: 6px 10px; white-space: nowrap; flex: none;
+}
+.tab { font-family: var(--font-display); font-size: 17px; font-weight: 600; text-transform: uppercase; min-width: 62px; text-align: center; line-height: 1.1; }
+.tab small { display: block; font-family: var(--font-body); font-size: 11px; font-weight: 400; color: var(--muted); text-transform: none; }
+.tab[aria-pressed="true"], .chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.tab[aria-pressed="true"] small { color: var(--bg); opacity: .75; }
+.chip { font-size: 13px; padding: 5px 10px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; border-left-width: 5px; }
+.tile.go { border-left-color: var(--go); } .tile.marg { border-left-color: var(--marg); } .tile.no { border-left-color: var(--no); }
+.tile .n { font-family: var(--font-display); font-size: 32px; font-weight: 700; line-height: 1; }
+.tile .l { font-size: 12px; color: var(--muted); }
+.best { font-size: 14px; color: var(--muted); }
+.best b { color: var(--ink); font-weight: 600; }
+
+.board { display: flex; flex-direction: column; gap: 8px; }
+.site { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; border-left: 5px solid var(--no); }
+.site.v-go { border-left-color: var(--go); } .site.v-marg { border-left-color: var(--marg); } .site.v-closed { border-left-color: var(--stop); }
+.row { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 12px; padding: 10px 12px; align-items: center; }
+.id { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 10px; align-items: center; }
+.id h3 { font-size: 21px; font-weight: 600; line-height: 1.1; overflow-wrap: anywhere; }
+.meta { font-size: 12px; color: var(--muted); }
+.verdict { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; margin-top: 4px; }
+.pill { font-family: var(--font-display); font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: .04em;
+  padding: 1px 8px; border-radius: 3px; background: var(--no-bg); color: var(--no); }
+.pill.go { background: var(--go-bg); color: var(--go); }
+.pill.marg { background: var(--marg-bg); color: var(--marg); }
+.pill.closed { background: var(--stop-bg); color: var(--stop); }
+.window { font-weight: 600; font-size: 14px; }
+.why { font-size: 12px; color: var(--muted); }
+
+.strip { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px; }
+.cell { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 3px 0 2px; border-radius: 3px;
+  background: var(--no-bg); color: var(--no); min-width: 0; border: 1px solid transparent; }
+.cell .h { font-size: 10px; color: var(--muted); line-height: 1; }
+.cell .s { font-size: 11px; font-weight: 600; line-height: 1; }
+.cell svg { width: 16px; height: 16px; display: block; }
+.cell.go { background: var(--go-bg); color: var(--go); border-color: var(--go); }
+.cell.marg { background: var(--marg-bg); color: var(--marg); border-style: dashed; border-color: var(--marg); }
+.cell.stop { background: var(--stop-bg); color: var(--stop); }
+.cell.now { box-shadow: 0 0 0 2px var(--accent); }
+.site.v-closed .strip { opacity: .55; }
+
+details { border-top: 1px solid var(--line); }
+summary { cursor: pointer; padding: 7px 12px; font-size: 13px; color: var(--muted); list-style-position: inside; }
+.more { padding: 4px 12px 14px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+.facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 12px; font-size: 13px; margin: 0; }
+.facts dt { color: var(--muted); } .facts dd { margin: 0; }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+th, td { text-align: right; padding: 3px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-weight: 500; color: var(--muted); }
+th:first-child, td:first-child, th:last-child, td:last-child { text-align: left; }
+td.go { color: var(--go); font-weight: 600; } td.marg { color: var(--marg); font-weight: 600; } td.stop { color: var(--stop); }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; align-items: center; }
+.legend .cell { width: 26px; padding: 6px 0; display: inline-flex; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.limits { display: flex; flex-wrap: wrap; gap: 12px; }
+.limits label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); }
+.limits input { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 5px 8px; width: 110px; }
+.panel ul { margin: 0; padding-left: 18px; max-width: 70ch; }
+.panel li { margin-bottom: 4px; }
+.warn { border-left: 5px solid var(--stop); }
+footer { font-size: 12px; color: var(--muted); }
+
+.right { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.models { display: flex; flex-wrap: wrap; gap: 4px; }
+.mchip { display: inline-block; font-size: 11px; font-weight: 600; line-height: 1.2; padding: 2px 6px; border-radius: 3px; white-space: nowrap;
+  background: var(--no-bg); color: var(--no); border: 1px solid transparent; }
+.mchip.go { background: var(--go-bg); color: var(--go); border-color: var(--go); }
+.mchip.marg { background: var(--marg-bg); color: var(--marg); border: 1px dashed var(--marg); }
+.mchip.stop, .mchip.closed { background: var(--stop-bg); color: var(--stop); }
+.nowline { font-size: 12px; color: var(--muted); }
+.nowline b { color: var(--ink); font-weight: 600; }
+.wcell .m { font-size: 10px; color: var(--muted); }
+.week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
+.wcell { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 0; border-radius: 3px; min-width: 0;
+  background: var(--no-bg); color: var(--no); border: 1px solid transparent; font-size: 11px; line-height: 1.1; }
+.wcell .d { font-size: 10px; color: var(--muted); }
+.wcell .s { font-size: 12px; font-weight: 600; }
+.wcell .r { font-size: 10px; color: var(--muted); }
+.wcell .r.wet { color: var(--rain); font-weight: 600; }
+.wcell .w { font-size: 10px; font-weight: 600; }
+.wcell .n { font-family: var(--font-display); font-size: 22px; font-weight: 700; line-height: 1; }
+.wcell svg { width: 16px; height: 16px; display: block; }
+.wcell.go { background: var(--go-bg); color: var(--go); border-color: var(--go); }
+.wcell.marg { background: var(--marg-bg); color: var(--marg); border-style: dashed; border-color: var(--marg); }
+.wcell.closed { background: var(--stop-bg); color: var(--stop); }
+.site.overview { border-left-color: var(--ink); }
+[hidden] { display: none !important; }
+
+@media (max-width: 720px) {
+  h1 { font-size: 28px; }
+  .row { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .more { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: no-preference) { .tab, .chip { transition: background-color .12s; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Liguria <span>Launch Board</span></h1>
+    <p class="lede">Twenty-five paragliding launches from Ospedaletti to the Cinque Terre, cross-checked on several pilot sources. For each one: the wind sector it works with, whether the forecast makes it flyable, and during which hours.</p>
+  </header>
+
+  <div id="status" class="status"><span class="dot"></span><div id="statusText">Loading forecast…</div></div>
+
+  <div class="controls">
+    <div class="chips" role="group" aria-label="View">
+      <button class="chip" data-view="day" aria-pressed="true">Day by hour</button>
+      <button class="chip" data-view="week" aria-pressed="false">Week overview</button>
+    </div>
+    <div id="tabs" class="tabs" role="group" aria-label="Day"></div>
+    <div class="chips" role="group" aria-label="Filters">
+      <button class="chip" data-area="all" aria-pressed="true">All areas</button>
+      <button class="chip" data-area="Imperia" aria-pressed="false">Imperia</button>
+      <button class="chip" data-area="Savona" aria-pressed="false">Savona</button>
+      <button class="chip" data-area="Genova" aria-pressed="false">Genova</button>
+      <button class="chip" data-area="La Spezia" aria-pressed="false">La Spezia</button>
+      <button class="chip" id="sortBtn" aria-pressed="false">Best first</button>
+    </div>
+  </div>
+
+  <div class="summary" id="summary"></div>
+  <p class="best" id="best"></p>
+
+  <div class="board" id="board"></div>
+
+  <section class="panel">
+    <h2>How to read it</h2>
+    <div class="legend">
+      <span><i class="cell go"></i> Flyable: wind in sector, within limits</span>
+      <span><i class="cell marg"></i> Marginal: cross, light or near the limits</span>
+      <span><i class="cell"></i> No: wrong direction</span>
+      <span><i class="cell stop"></i> No: too strong, rain or lee side</span>
+    </div>
+    <ul>
+      <li>Each cell is one daylight hour. The arrow shows where the wind blows to, the number is mean wind in km/h.</li>
+      <li>The compass next to each name shows the launch sector: solid green is good, amber is marginal, red is a direction to avoid.</li>
+      <li>A wind direction counts as in sector within 22.5° of a listed direction, and marginal up to 40°.</li>
+      <li>Model check: the main verdict uses the Open-Meteo best-match forecast. The chips under each strip show what ICON-2I, ICON-D2, AROME, ICON-EU and ECMWF say for the same launch and day. The 2 km models only reach two or three days ahead. When they disagree, trust the verdict less.</li>
+      <li>Measured: the latest reading from the nearest ARPAL anemometer within 15 km, coloured against the launch sector. A station in a harbour or on another ridge can read very differently from the launch.</li>
+      <li>Week overview: each cell is one day, with the mean daylight wind in km/h, the rain total over the 24 hours and the longest flyable window, plus how many of the other models call the day flyable. Tap a day to open its hourly board.</li>
+    </ul>
+    <h2>Your limits</h2>
+    <div class="limits">
+      <label for="limWind">Max mean wind (km/h)<input id="limWind" type="number" min="10" max="40" step="1"></label>
+      <label for="limGust">Max gust (km/h)<input id="limGust" type="number" min="15" max="60" step="1"></label>
+      <label for="limLight">Light below (km/h)<input id="limLight" type="number" min="0" max="12" step="1"></label>
+    </div>
+  </section>
+
+  <section class="panel warn">
+    <h2>Before you drive up</h2>
+    <ul>
+      <li>This is a model forecast for wind at 10 m above ground on a grid of a few kilometres. It does not see local sea breeze, rotor, thermals or cloud base. The windsock and the local pilots decide.</li>
+      <li>Launches that land on a beach are closed from 1 May to 30 September. The board marks them closed on those dates.</li>
+      <li>Launch positions come from published sources where one exists. Six are still estimates, only good enough to pick the forecast point: each launch says which it is.</li>
+      <li>Wind sectors come from pilot websites of different ages. Where they disagree the board takes the cautious reading and says so in the site notes. Landing agreements and access rules change: check with the local club.</li>
+      <li>Live stations: <a href="https://omirl.regione.liguria.it/">ARPAL OMIRL network</a>, <a href="https://holfuy.com/it/camera/855">Bergeggi (Holfuy)</a>, <a href="https://holfuy.com/it/weather/962">Finale Ligure (Holfuy)</a>.</li>
+    </ul>
+  </section>
+
+  <footer>Site data: <a href="https://parapendioliguria.it/decolli-parapendio-liguria/">parapendioliguria.it</a>, <a href="https://www.finalevolo.it/sitiliguria.htm">finalevolo.it</a>, <a href="https://www.montagnadilombardia.com/liguria.html">montagnadilombardia.com</a>, <a href="https://www.marcocilli.it/hobbies/vololibero_ponenteflight/vololiberodecolli.html">Ponente Flight</a>, <a href="http://www.rocchettanervina.com/luca/parapendio.html">rocchettanervina.com</a>, <a href="https://www.paragliding365.com/index-p-flightarea1_17_167.html">paragliding365.com</a>. Stations: <a href="https://omirl.regione.liguria.it/">ARPAL OMIRL</a>. Forecast: <a href="https://open-meteo.com/">Open-Meteo</a>. Times are Europe/Rome.</footer>
+</div>
+
+<script>
+"use strict";
+
+// ---------------------------------------------------------------------------
+// Site data. Directions are the wind directions (where the wind comes FROM)
+// the launch works with. lat/lon are approximate, used only for the forecast.
+// ---------------------------------------------------------------------------
+const SOURCES = {
+  PL: ["parapendioliguria.it", "https://parapendioliguria.it/decolli-parapendio-liguria/"],
+  FV: ["finalevolo.it", "https://www.finalevolo.it/sitiliguria.htm"],
+  ML: ["montagnadilombardia.com", "https://www.montagnadilombardia.com/liguria.html"],
+  PF: ["Ponente Flight", "https://www.marcocilli.it/hobbies/vololibero_ponenteflight/vololiberodecolli.html"],
+  RN: ["rocchettanervina.com", "http://www.rocchettanervina.com/luca/parapendio.html"],
+  P3: ["paragliding365.com", "https://www.paragliding365.com/index-p-flightarea1_17_167.html"]
+};
+
+// Ordered west to east. "gps: true" means the coordinates come from a published source;
+// otherwise they are estimated and only good enough to pick a forecast point.
+const SITES = [
+  { id: "pianoro", name: "Ospedaletti Pianoro", town: "Ospedaletti (IM)", area: "Imperia", alt: 800, lat: 43.82892, lon: 7.71510, gps: true,
+    good: ["SW"], marginal: ["S"], avoid: ["W", "NW"], beach: false, src: ["RN", "P3"],
+    landing: "Ospedaletti seafront (official landing Baia Verde), a very small area. Beaches are forbidden in the bathing season. Sanremo golf course only in an emergency.",
+    access: "Club shuttle, or by car via Coldirodi towards San Romolo and about 15 min on foot.",
+    notes: "Technical flight for experienced pilots. Possible lee with W and NW wind. Report to the local club before going up." },
+  { id: "montenero", name: "Ospedaletti Monte Nero", town: "Ospedaletti (IM)", area: "Imperia", alt: 520, lat: 43.80807, lon: 7.68931, gps: true,
+    good: ["SE", "S"], marginal: ["E", "SW"], avoid: [], beach: false, src: ["PF", "P3"],
+    landing: "Ospedaletti seafront, a very small area. Beaches are forbidden in the bathing season.",
+    access: "Official club shuttle only. The fire road is closed to private vehicles, with heavy fines.",
+    notes: "A high-voltage line crosses the slope below the launch. A lower launch at 310 m faces SE.",
+    conflict: "One source gives SE and S, another E, S and light SW. E and SW are shown as marginal." },
+  { id: "mendatica", name: "Mendatica", town: "Mendatica (IM)", area: "Imperia", alt: 1270, lat: 44.09694, lon: 7.79694, gps: true,
+    good: ["SE"], marginal: ["S"], avoid: [], beach: false, src: ["FV", "P3"],
+    landing: "Small field at 750 m, not recommended for beginners: you can come up short. Top landing is the easier option.",
+    access: "South side of Colle San Bernardo.",
+    notes: "Wide grass launch. Thermals release along the ridges east of the launch." },
+  { id: "rollo", name: "Rollo", town: "Andora (SV)", area: "Savona", alt: 340, lat: 43.937, lon: 8.127,
+    good: ["NE", "E"], marginal: [], avoid: [], beach: true, src: ["PL"],
+    landing: "Official Andora beach. Laigueglia beach only if you pass Capo Mele with at least 800 m.",
+    access: "Road from Cervo, then about 10 min on foot.",
+    notes: "Ridge launch. Overflying the Capo Mele radar centre is forbidden." },
+  { id: "capomele", name: "Capo Mele", town: "Laigueglia (SV)", area: "Savona", alt: 220, lat: 43.957, lon: 8.170,
+    good: ["N", "NE"], marginal: [], avoid: [], beach: true, src: ["FV"],
+    landing: "Laigueglia beach near Capo Mele, where it is widest. Top landing for experienced pilots only.",
+    access: "From the Andora side, road through the pine wood towards the radar station, then Via Semaforo to the dirt track. 50 m on foot.",
+    notes: "Steep launch, classic ridge soaring towards Laigueglia and Alassio. Pines below the launch and a power line on its right. Overflying the radar centre is forbidden." },
+  { id: "puerta", name: "Puerta del Sol", town: "Alassio (SV)", area: "Savona", alt: 195, lat: 43.99716, lon: 8.16047, gps: true,
+    good: ["NE", "E"], marginal: [], avoid: [], beach: true, src: ["PL", "FV", "ML"],
+    landing: "Alassio beach. Laigueglia beach is smaller and not recommended.",
+    access: "Road from Alassio past the abandoned Hotel Puerta del Sol. The launch is below the road, marked by wind indicators.",
+    notes: "Small, short and steep grass launch for about two wings. Very low: without a good wind you are on the beach in seconds. Overflying the Capo Mele radar centre is forbidden." },
+  { id: "pisciavino", name: "Monte Pisciavino", town: "Alassio (SV)", area: "Savona", alt: 580, lat: 44.01117, lon: 8.16247, gps: true,
+    good: ["E", "SE", "S"], marginal: [], avoid: [], beach: true, src: ["PL", "FV", "ML"],
+    landing: "Alassio beach, east side. Always check the space available.",
+    access: "From Alassio towards Vegliasco, then a rough dirt road to the transmitters. 4x4 recommended, or about 20 min on foot.",
+    notes: "Mostly thermal flying; room for three or four wings. With strong S wind you may not penetrate forward. Overflying the Capo Mele radar centre is forbidden." },
+  { id: "toirano", name: "Toirano", town: "Toirano (SV)", area: "Savona", alt: 475, lat: 44.133, lon: 8.190,
+    good: ["SE"], marginal: [], avoid: [], beach: false, src: ["FV"],
+    landing: "Two small fields at 100 m and 70 m with light turbulence on approach. Not for inexperienced pilots: top landing is simpler when conditions allow.",
+    access: "SP 35 from Toirano towards Balestrino, then the narrow Via Groa for about 2 km.",
+    notes: "Very wide, easy launch. The valley to the west behind the launch is lee side: stay out of it." },
+  { id: "borgio", name: "Borgio Verezzi", town: "Borgio Verezzi (SV)", area: "Savona", alt: 260, lat: 44.165, lon: 8.305,
+    good: ["SE", "S"], marginal: [], avoid: [], beach: true, src: ["FV"],
+    landing: "Borgio Verezzi beach, very wide.",
+    access: "Road from the Borgio level crossing towards Verezzi, right at the Mulino sign, park at the old quarry. 200 m on foot.",
+    notes: "Room for two or three wings; the launch ends at a low wall. Flying east towards Finale has no landing options on the way: not for a first visit." },
+  { id: "varigotti", name: "Finale Ligure / Varigotti", town: "Finale Ligure (SV)", area: "Savona", alt: 283, lat: 44.18415, lon: 8.37290, gps: true,
+    good: ["E", "SE", "S"], marginal: ["SW"], avoid: [], beach: true, src: ["PL", "FV", "ML", "P3"],
+    landing: "Varigotti beach, preferred with S or SW wind. Finale beach with a SE breeze. Neither is visible from the launch.",
+    access: "SP 45 towards Le Manie, park at the top of the climb. 100 m on foot through the pines.",
+    notes: "One pilot at a time. In nil wind the wing heads for the trees: a real breeze is needed. Top landing for experienced pilots only.",
+    conflict: "All sources give SE and S, two of three add E. Only one lists SW as good, so it is shown as marginal.",
+    link: ["Holfuy station", "https://holfuy.com/it/weather/962"] },
+  { id: "noli", name: "Noli", town: "Noli (SV)", area: "Savona", alt: 280, lat: 44.19617, lon: 8.41082, gps: true,
+    good: ["NE"], marginal: [], avoid: ["N"], beach: true, src: ["PL", "FV", "P3"],
+    landing: "Noli beach, in its first stretch towards SE. If the wind turns S or N the return gets difficult.",
+    access: "Le Manie plateau, past the Ferrin trattoria, then about 2 km of dirt road.",
+    notes: "Works with NE only, often when the other sites do not. Do not fly with N wind. Small launch, one pilot at a time, expect a queue. If the wind backs to E, move to Bergeggi or Varigotti." },
+  { id: "ligea", name: "Spotorno Ligea", town: "Spotorno (SV)", area: "Savona", alt: 150, lat: 44.23663, lon: 8.42295, gps: true,
+    good: ["SE", "S"], marginal: [], avoid: [], beach: true, src: ["PL", "FV", "ML", "P3"],
+    landing: "Spotorno beach, east side.",
+    access: "Via Antica Romana from Spotorno: very steep narrow road to a small clearing, then a short walk.",
+    notes: "Carpeted launch for two or three wings. Flight schools often work here: watch for students." },
+  { id: "mao", name: "Monte Mao", town: "Spotorno (SV)", area: "Savona", alt: 400, lat: 44.23989, lon: 8.42303, gps: true,
+    good: ["S", "SW"], marginal: [], avoid: ["SE"], beach: true, src: ["PL", "FV", "P3"],
+    landing: "Spotorno beach.",
+    access: "Long dirt road from Bergeggi, not always in good condition.",
+    notes: "With any SE component the launch is on the lee side and you find sink. Large meadow, now little used and not always cleared. Sources give 370 m to 420 m." },
+  { id: "bergeggi", name: "Bergeggi", town: "Bergeggi (SV)", area: "Savona", alt: 280, lat: 44.25077, lon: 8.43946, gps: true,
+    good: ["E", "SE", "S"], marginal: [], avoid: ["SW"], beach: true, src: ["PL", "FV", "ML", "P3"],
+    landing: "Bergeggi beach. Watch for people and beach clubs.",
+    access: "From Bergeggi go around the hill past the sports field, then 700 m of dirt road to Forte Sant'Elena. No parking next to the launch: use the area designated by the Comune.",
+    notes: "Best with SE. Do not fly with SW. Small launch with carpet, a couple of wings at a time. Top landing for experienced pilots only.",
+    link: ["Holfuy station", "https://holfuy.com/it/camera/855"] },
+  { id: "varazze", name: "Varazze", town: "Varazze (SV)", area: "Savona", alt: 402, lat: 44.37233, lon: 8.59483, gps: true,
+    good: ["SE", "S", "SW"], marginal: ["E"], avoid: [], beach: true, src: ["PL", "FV", "P3"],
+    landing: "Varazze beach, widest stretch west of Punta della Mola. It can be crowded even in spring and autumn.",
+    access: "On foot, about 30 min from the car park on the Giavarosso road to the Madonna della Guardia sanctuary.",
+    notes: "Launch from the church forecourt, uneven ground, one pilot at a time. Soaring on the sea side of Monte Grosso.",
+    conflict: "All three sources give SE, S and SW. Only one adds E, shown as marginal." },
+  { id: "beigua", name: "Monte Beigua", town: "Cogoleto (GE)", area: "Genova", alt: 1100, lat: 44.420, lon: 8.577,
+    good: ["SE", "S", "SW"], marginal: [], avoid: [], beach: true, src: ["PL"],
+    landing: "Cogoleto beach, far east end by the Lerone stream mouth. Emergency fields and the Arenzano golf course as alternatives.",
+    access: "A10 exit Arenzano or Varazze, Beigua park road to Rifugio Pratorotondo. About 1 h by car plus 20 min on foot.",
+    notes: "Large grass launch." },
+  { id: "creto", name: "Creto", town: "Genova, Molassana (GE)", area: "Genova", alt: 620, lat: 44.47639, lon: 9.00583, gps: true,
+    good: ["S", "SW"], marginal: ["SE"], avoid: [], beach: false, src: ["FV", "P3"],
+    landing: "Official field at 320 m, very technical. Alternatives listed by the source: Prati Casilinida, the Antichi meadow, the slope behind the Creto villas.",
+    access: "A12 exit Genova Est, Molassana, road to Creto, then Via ai Villini di Creto and a dirt track.",
+    notes: "Steep launch, one wing at a time. Power line on the left of the launch. Cables near the Casalino field are hard to see: approach it from the north.",
+    conflict: "Both sources give S and SW. Only one adds SE, shown as marginal." },
+  { id: "maggio", name: "Monte Maggio", town: "Casella / Savignone (GE)", area: "Genova", alt: 980, lat: 44.55556, lon: 9.00528, gps: true,
+    good: ["SE", "S"], marginal: ["SW"], avoid: [], beach: false, src: ["PL", "FV", "P3"],
+    landing: "Casella, about 420 m: very large and visible from the launch.",
+    access: "A7 exit Busalla, follow Casella, up to the Colonia and walk about 30 min to the chapel.",
+    notes: "Steep but easy launch. Right after take-off do not drift left: a Venturi makes it hard to get out. With SW valley breeze use the thermal to the right. Open all year." },
+  { id: "banca", name: "Monte Banca", town: "Casella / Montoggio (GE)", area: "Genova", alt: 926, lat: 44.53611, lon: 9.03972, gps: true,
+    good: ["W"], marginal: ["SW", "NW", "N"], avoid: [], beach: false, src: ["FV", "P3"],
+    landing: "Casella, or Casalino which is closer. Emergency: the Scrivia riverbed, usually dry, check first.",
+    access: "A7 exit Busalla, Casella, from Montoggio up towards Fasciou to the clay-pigeon range, then on foot.",
+    notes: "Flyable with north wind too, but expect turbulence. You need good height to reach Casella." },
+  { id: "soglio", name: "Soglio", town: "Orero (GE)", area: "Genova", alt: 590, lat: 44.40181, lon: 9.28502, gps: true,
+    good: ["SW"], marginal: [], avoid: [], beach: false, src: ["P3"],
+    landing: "Unofficial meadow at about 43 m, shared with model flyers. Without some height you cannot reach it and must use the fields before it.",
+    access: "By car, then on foot to the launch. Hike and fly from Pian di Coreglia.",
+    notes: "Easy launch with plenty of room. Many high-voltage lines: locate them before flying. Flyable all year." },
+  { id: "ginestre", name: "Riva Trigoso Ginestre", town: "Sestri Levante (GE)", area: "Genova", alt: 225, lat: 44.2625, lon: 9.415, gps: true,
+    good: ["SE"], marginal: ["S"], avoid: [], beach: true, src: ["PL", "P3"],
+    landing: "Riva Trigoso beach.",
+    access: "A12 exit Sestri Levante, follow Riva Trigoso. 15 min on foot.",
+    notes: "Short, steep, stony launch. If the ridge does not hold right after take-off you are on the lee side: go and land. Overflying the shipyard is forbidden (military area)." },
+  { id: "rena", name: "Riva Trigoso Renà", town: "Sestri Levante (GE)", area: "Genova", alt: 150, lat: 44.25361, lon: 9.43611, gps: true,
+    good: ["SW"], marginal: ["S", "W"], avoid: [], beach: true, src: ["PL", "P3"],
+    landing: "Riva Trigoso beach.",
+    access: "A12 exit Sestri Levante, follow Riva Trigoso. 4x4 only, or about 35 min on foot.",
+    notes: "Small, narrow, flat earth launch. Overflying the shipyard is forbidden (military area)." },
+  { id: "bonassola", name: "Bonassola", town: "Bonassola (SP)", area: "La Spezia", alt: 530, lat: 44.196, lon: 9.575,
+    good: ["SE", "S", "SW"], marginal: [], avoid: [], beach: true, src: ["PL"],
+    landing: "Small beach squeezed between two headlands. Check the space available.",
+    access: "A12 exit Carrodano or Deiva, follow Bonassola. 10 min on foot.",
+    notes: "Wide grass launch." },
+  { id: "monterosso", name: "Monterosso", town: "Monterosso al Mare (SP)", area: "La Spezia", alt: 550, lat: 44.15269, lon: 9.66957, gps: true,
+    good: ["S", "SE"], marginal: ["SW"], avoid: [], beach: true, src: ["PL", "ML", "P3"],
+    landing: "Beach, often with very little room.",
+    access: "Near the Soviore sanctuary. Awkward logistics.",
+    notes: "Punta Mesco is a trap: pilots who could not soar back to Monterosso have ended up in the sea. With SW you can take off but flying is not recommended. The Cinque Terre National Park regulates paraglider overflight: read the park rules first." },
+  { id: "casoni", name: "Casoni di Suvero", town: "Suvero (SP)", area: "La Spezia", alt: 1020, lat: 44.29833, lon: 9.78583, gps: true,
+    good: ["S", "SW"], marginal: ["SE"], avoid: [], beach: false, src: ["PL", "P3"],
+    landing: "Top landing or the field below. Only the official field may be used.",
+    access: "A12 exit Brugnato, follow Suvero / Casoni, left at the pass, then about 15 min of dirt road to the chapel.",
+    notes: "Wide, easy grass launch. Open all year. The wind is sometimes very strong: watch the local pilots.",
+    conflict: "Both sources give S and SW. Only one adds SE, shown as marginal." }
+];
+
+const BEARING = { N: 0, NE: 45, E: 90, SE: 135, S: 180, SW: 225, W: 270, NW: 315 };
+const COMPASS16 = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+const compass = deg => COMPASS16[Math.round(((deg % 360) + 360) % 360 / 22.5) % 16];
+const angDiff = (a, b) => { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };
+const minDiff = (deg, dirs) => dirs.length ? Math.min(...dirs.map(d => angDiff(deg, BEARING[d]))) : 999;
+
+// ---------------------------------------------------------------------------
+// Limits (kept in this browser only).
+// ---------------------------------------------------------------------------
+const limits = { wind: 25, gust: 35, light: 5 };
+try {
+  const saved = JSON.parse(localStorage.getItem("llb-limits") || "null");
+  if (saved) Object.assign(limits, saved);
+} catch (e) { /* storage unavailable */ }
+
+// ---------------------------------------------------------------------------
+// Verdict for one hour at one site.
+// h = { speed, gust, dir, rain, code }  ->  { level: go|marg|no|stop, why }
+// ---------------------------------------------------------------------------
+function judge(site, h) {
+  if (h.rain >= 0.2 || h.code >= 51) return { level: "stop", why: h.code >= 95 ? "thunderstorm" : "rain" };
+  if (h.speed > limits.wind) return { level: "stop", why: "wind too strong" };
+  if (h.gust > limits.gust) return { level: "stop", why: "gusts too strong" };
+  if (h.speed < limits.light) return { level: "marg", why: "light wind, glide only" };
+  if (minDiff(h.dir, site.avoid) <= 22.5) return { level: "stop", why: "lee side from " + compass(h.dir) };
+  const g = minDiff(h.dir, site.good), m = minDiff(h.dir, site.marginal);
+  if (g <= 22.5) {
+    if (h.speed > 0.8 * limits.wind || h.gust > 0.85 * limits.gust) return { level: "marg", why: "in sector but strong" };
+    if (h.code === 45 || h.code === 48) return { level: "marg", why: "fog or low cloud" };
+    return { level: "go", why: "in sector" };
+  }
+  if (m <= 22.5 || g <= 40) return { level: "marg", why: "cross wind from " + compass(h.dir) };
+  return { level: "no", why: "wrong direction (" + compass(h.dir) + ")" };
+}
+
+// Beach landings are closed 1 May - 30 September.
+function closedOn(site, dateStr) {
+  if (!site.beach) return false;
+  const m = +dateStr.slice(5, 7);
+  return m >= 5 && m <= 9;
+}
+
+// Longest run of consecutive hours at a given level -> [startHour, endHourExclusive] or null.
+function longestRun(hours, level) {
+  let best = null, start = null, prev = null;
+  const close = () => { if (start !== null && (!best || prev - start > best[1] - 1 - best[0])) best = [start, prev + 1]; };
+  for (const h of hours) {
+    if (h.v.level === level && (start === null || h.hour === prev + 1)) { if (start === null) start = h.hour; prev = h.hour; }
+    else { close(); start = h.v.level === level ? h.hour : null; prev = h.hour; }
+  }
+  close();
+  return best;
+}
+
+function assess(site, day) {
+  const hours = day.hours.map(h => ({ ...h, v: judge(site, h) }));
+  const closed = closedOn(site, day.date);
+  const go = longestRun(hours, "go"), marg = longestRun(hours, "marg");
+  let verdict = "no", win = null, why = "";
+  if (go) { verdict = "go"; win = go; }
+  else if (marg) { verdict = "marg"; win = marg; why = hours.find(h => h.hour === marg[0]).v.why; }
+  else {
+    const counts = {};
+    hours.forEach(h => counts[h.v.why] = (counts[h.v.why] || 0) + 1);
+    why = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0] || "no data";
+  }
+  if (closed) { verdict = "closed"; why = "beach landing closed 1 May to 30 Sep"; }
+  return { site, hours, verdict, win, why, goHours: hours.filter(h => h.v.level === "go").length };
+}
+
+// ---------------------------------------------------------------------------
+// Forecast: Open-Meteo, one request for all sites. Falls back to example data.
+// forecast[siteId] = [ { date, hours: [ {hour, speed, gust, dir, rain, prob, code} ] } ]  (daylight hours only)
+// ---------------------------------------------------------------------------
+function romeNow() {
+  const p = {};
+  new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Rome", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", hourCycle: "h23" })
+    .formatToParts(new Date()).forEach(x => p[x.type] = x.value);
+  return { date: `${p.year}-${p.month}-${p.day}`, hour: +p.hour };
+}
+
+const MODELS = [
+  { id: "italia_meteo_arpae_icon_2i", label: "ICON-2I" },
+  { id: "icon_d2", label: "ICON-D2" },
+  { id: "meteofrance_arome_france_hd", label: "AROME" },
+  { id: "icon_eu", label: "ICON-EU" },
+  { id: "ecmwf_ifs025", label: "ECMWF" }
+];
+
+function parseOpenMeteo(json) {
+  const list = Array.isArray(json) ? json : [json];
+  const out = {};
+  SITES.forEach((site, i) => {
+    const H = list[i].hourly, days = [];
+    H.time.forEach((t, k) => {
+      const date = t.slice(0, 10);
+      let day = days[days.length - 1];
+      if (!day || day.date !== date) { day = { date, hours: [], rainTotal: 0, probMax: null }; days.push(day); }
+      day.rainTotal += H.precipitation[k] || 0;
+      if (H.precipitation_probability && H.precipitation_probability[k] != null)
+        day.probMax = Math.max(day.probMax == null ? 0 : day.probMax, H.precipitation_probability[k]);
+      if (!H.is_day[k]) return;
+      day.hours.push({ hour: +t.slice(11, 13), speed: H.wind_speed_10m[k], gust: H.wind_gusts_10m[k], dir: H.wind_direction_10m[k],
+        rain: H.precipitation[k] || 0, prob: H.precipitation_probability ? H.precipitation_probability[k] : null, code: H.weather_code[k] || 0 });
+    });
+    out[site.id] = days;
+  });
+  return out;
+}
+
+// One model out of a multi-model response. Variables are named <variable>_<model id>.
+// Only the daylight hours of the main forecast are kept; hours the model does not cover are skipped.
+// Result: { siteId: { date: { date, hours } } }
+function parseModel(json, modelId, primary) {
+  const list = Array.isArray(json) ? json : [json];
+  const out = {};
+  SITES.forEach((site, i) => {
+    const H = list[i].hourly, get = n => H[n + "_" + modelId] || H[n] || [];
+    const sp = get("wind_speed_10m"), gu = get("wind_gusts_10m"), di = get("wind_direction_10m"), pr = get("precipitation"), wc = get("weather_code");
+    const daylight = new Set();
+    primary[site.id].forEach(d => d.hours.forEach(h => daylight.add(d.date + "|" + h.hour)));
+    const byDate = {};
+    H.time.forEach((t, k) => {
+      const date = t.slice(0, 10), hour = +t.slice(11, 13);
+      if (!daylight.has(date + "|" + hour) || sp[k] == null || di[k] == null) return;
+      (byDate[date] = byDate[date] || { date, hours: [] }).hours.push(
+        { hour, speed: sp[k], gust: gu[k] == null ? sp[k] : gu[k], dir: di[k], rain: pr[k] || 0, prob: null, code: wc[k] || 0 });
+    });
+    out[site.id] = byDate;
+  });
+  return out;
+}
+
+const OM = "https://api.open-meteo.com/v1/forecast";
+const coords = () => "?latitude=" + SITES.map(s => s.lat).join(",") + "&longitude=" + SITES.map(s => s.lon).join(",");
+
+async function getJson(url, ms) {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), ms);
+  try {
+    const res = await fetch(url, { signal: ctl.signal });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return await res.json();
+  } finally { clearTimeout(timer); }
+}
+
+async function fetchLive() {
+  return parseOpenMeteo(await getJson(OM + coords()
+    + "&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m,precipitation,precipitation_probability,weather_code,is_day"
+    + "&wind_speed_unit=kmh&forecast_days=7&timezone=Europe%2FRome", 15000));
+}
+
+async function fetchModels(primary) {
+  const json = await getJson(OM + coords()
+    + "&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m,precipitation,weather_code"
+    + "&models=" + MODELS.map(m => m.id).join(",")
+    + "&wind_speed_unit=kmh&forecast_days=7&timezone=Europe%2FRome", 30000);
+  return MODELS.map(m => ({ label: m.label, fc: parseModel(json, m.id, primary) }));
+}
+
+// ---------------------------------------------------------------------------
+// Live wind stations: ARPAL OMIRL network. value = mean wind km/h, increment = direction in degrees,
+// refDate is UTC.
+// ---------------------------------------------------------------------------
+async function fetchStations() {
+  return parseStations(await getJson("https://omirl.regione.liguria.it/Omirl/rest/stations/Vento", 15000));
+}
+
+function parseStations(list) {
+  const now = Date.now();
+  return list.map(x => ({ name: x.name, lat: x.lat, lon: x.lon, alt: x.alt, speed: x.value, dir: x.increment, t: new Date(x.refDate + "Z") }))
+    .filter(x => x.speed != null && x.dir != null && now - x.t.getTime() < 3 * 3600e3);
+}
+
+function distKm(aLat, aLon, bLat, bLon) {
+  const r = Math.PI / 180, x = (bLon - aLon) * r * Math.cos((aLat + bLat) / 2 * r), y = (bLat - aLat) * r;
+  return Math.sqrt(x * x + y * y) * 6371;
+}
+
+function nearStations(site) {
+  if (!state.stations) return [];
+  return state.stations.map(st => ({ st, km: distKm(site.lat, site.lon, st.lat, st.lon) }))
+    .filter(x => x.km <= 15).sort((a, b) => a.km - b.km).slice(0, 2);
+}
+
+const stationTime = st => st.t.toLocaleTimeString("en-GB", { timeZone: "Europe/Rome", hour: "2-digit", minute: "2-digit" });
+
+// Invented example week, used only when the live forecast cannot be reached.
+function exampleForecast() {
+  const pattern = [
+    { dir: 140, base: 9, peak: 17, gustK: 1.35 },            // SE breeze
+    { dir: 10, base: 24, peak: 32, gustK: 1.5 },             // tramontana
+    { dir: 225, base: 10, peak: 16, gustK: 1.3 },            // libeccio
+    { dir: 95, base: 8, peak: 14, gustK: 1.3, rainFrom: 14 },// east, rain later
+    { dir: 180, base: 2, peak: 4, gustK: 1.4 },              // calm
+    { dir: 175, base: 12, peak: 20, gustK: 1.3 },            // south
+    { dir: 50, base: 11, peak: 16, gustK: 1.35 }             // grecale
+  ];
+  const start = new Date(romeNow().date + "T12:00:00Z");
+  const out = {};
+  SITES.forEach((site, i) => {
+    out[site.id] = pattern.map((p, d) => {
+      const date = new Date(start.getTime() + d * 864e5).toISOString().slice(0, 10);
+      const hours = [];
+      for (let hour = 8; hour <= 16; hour++) {
+        const bell = Math.sin(Math.PI * (hour - 7) / 10);
+        const wob = Math.sin(i * 2.3 + hour * 0.9 + d);
+        const speed = Math.max(0, +(p.base + (p.peak - p.base) * bell + wob * 1.5).toFixed(1));
+        const raining = p.rainFrom && hour >= p.rainFrom;
+        hours.push({ hour, speed, gust: +(speed * p.gustK + 2).toFixed(1), dir: Math.round((p.dir + wob * 14 + (i % 4) * 5 + 360) % 360),
+          rain: raining ? 0.8 : 0, prob: raining ? 80 : 5, code: raining ? 61 : 1 });
+      }
+      return { date, hours };
+    });
+  });
+  return out;
+}
+
+// Invented model variants for the example week.
+function exampleModels(primary) {
+  return ["Example A", "Example B", "Example C"].map((label, m) => {
+    const fc = {};
+    SITES.forEach((site, i) => {
+      fc[site.id] = {};
+      primary[site.id].forEach((d, k) => {
+        const turn = Math.sin(m * 2.1 + k * 1.7 + i) * 35, gain = 1 + Math.cos(m * 1.3 + k + i * 0.5) * 0.3;
+        fc[site.id][d.date] = { date: d.date, hours: d.hours.map(h => ({ ...h,
+          speed: +(h.speed * gain).toFixed(1), gust: +(h.gust * gain).toFixed(1), dir: Math.round((h.dir + turn + 360) % 360) })) };
+      });
+    });
+    return { label, fc };
+  });
+}
+
+// Verdict of every extra model for one site and day. Models covering under 60% of the daylight hours are left out.
+function modelVerdicts(site, day) {
+  return (state.models || []).map(m => {
+    const d = m.fc[site.id] && m.fc[site.id][day.date];
+    if (!d || d.hours.length < Math.max(3, day.hours.length * 0.6)) return null;
+    const a = assess(site, d);
+    return { label: m.label, verdict: a.verdict, win: a.win };
+  }).filter(Boolean);
+}
+
+// ---------------------------------------------------------------------------
+// Rendering
+// ---------------------------------------------------------------------------
+const state = { forecast: exampleForecast(), models: null, stations: null, live: false, day: 0, view: "day", area: "all", best: false, open: new Set() };
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const hh = h => String(h).padStart(2, "0") + ":00";
+
+function arrowSvg(dir) {
+  // Drawn pointing up; rotated to point where the wind blows TO.
+  return `<svg viewBox="0 0 16 16" aria-hidden="true"><g transform="rotate(${(dir + 180) % 360} 8 8)"><path d="M8 1.5 12 8H9.3v6.5H6.7V8H4z" fill="currentColor"/></g></svg>`;
+}
+
+function wedge(bearing, half, r, fill, opacity) {
+  const a0 = (bearing - half - 90) * Math.PI / 180, a1 = (bearing + half - 90) * Math.PI / 180;
+  const x0 = 28 + r * Math.cos(a0), y0 = 28 + r * Math.sin(a0), x1 = 28 + r * Math.cos(a1), y1 = 28 + r * Math.sin(a1);
+  return `<path d="M28 28 L${x0.toFixed(1)} ${y0.toFixed(1)} A${r} ${r} 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)}Z" fill="${fill}" opacity="${opacity}"/>`;
+}
+
+function roseSvg(site, hour) {
+  let s = `<svg viewBox="0 0 56 56" width="56" height="56" role="img" aria-label="Launch sector: ${site.good.join(", ")}">`;
+  s += `<circle cx="28" cy="28" r="22" fill="none" stroke="var(--line)" stroke-width="1.5"/>`;
+  site.good.forEach(d => s += wedge(BEARING[d], 22.5, 22, "var(--go)", .8));
+  site.marginal.forEach(d => s += wedge(BEARING[d], 22.5, 22, "var(--marg)", .7));
+  site.avoid.forEach(d => s += wedge(BEARING[d], 22.5, 22, "var(--stop)", .55));
+  s += `<text x="28" y="5.5" text-anchor="middle" font-size="7" font-weight="600" fill="var(--muted)" font-family="var(--font-body)">N</text>`;
+  if (hour) {
+    // Needle sits on the side the wind comes from and points to the centre.
+    s += `<g transform="rotate(${hour.dir} 28 28)"><path d="M28 24 31.5 9.5H24.5z" fill="var(--ink)"/><line x1="28" y1="6" x2="28" y2="11" stroke="var(--ink)" stroke-width="2"/></g>`;
+  }
+  s += `<circle cx="28" cy="28" r="2" fill="var(--ink)"/></svg>`;
+  return s;
+}
+
+function dayLabel(dateStr, i) {
+  const d = new Date(dateStr + "T12:00:00Z");
+  const wd = d.toLocaleDateString("en-GB", { weekday: "short", timeZone: "UTC" });
+  const dm = d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+  return { top: i === 0 && dateStr === romeNow().date ? "Today" : wd, sub: dm };
+}
+
+// Daylight wind summary and 24 h rain for one day at one site.
+function dayStats(day) {
+  const hs = day.hours, n = hs.length || 1;
+  let x = 0, y = 0;
+  hs.forEach(h => { x += Math.sin(h.dir * Math.PI / 180); y += Math.cos(h.dir * Math.PI / 180); });
+  const probs = hs.map(h => h.prob).filter(p => p != null);
+  return {
+    speed: hs.reduce((a, h) => a + h.speed, 0) / n,
+    gust: hs.reduce((a, h) => Math.max(a, h.gust), 0),
+    dir: (Math.atan2(x, y) * 180 / Math.PI + 360) % 360,
+    rain: day.rainTotal != null ? day.rainTotal : hs.reduce((a, h) => a + h.rain, 0),
+    prob: day.probMax != null ? day.probMax : (probs.length ? Math.max(...probs) : null)
+  };
+}
+
+function shortDay(dateStr) {
+  const d = new Date(dateStr + "T12:00:00Z");
+  return d.toLocaleDateString("en-GB", { weekday: "short", timeZone: "UTC" }) + " " + d.getUTCDate();
+}
+
+function renderWeek() {
+  const days = state.forecast[SITES[0].id];
+  let list = SITES.filter(s => state.area === "all" || s.area === state.area).map(s => {
+    const cols = state.forecast[s.id].map(d => ({ a: assess(s, d), st: dayStats(d) }));
+    return { s, cols, goDays: cols.filter(c => c.a.verdict === "go").length };
+  });
+  const counts = days.map((d, i) => list.filter(x => x.cols[i].a.verdict === "go").length);
+  if (state.best) list = list.slice().sort((a, b) => b.goDays - a.goDays);
+
+  const overview = `<article class="site overview"><div class="row">
+      <div><h3>Flyable launches per day</h3><div class="meta">${list.length} launches shown · tap a day for the hourly board</div></div>
+      <div class="week">${days.map((d, i) =>
+        `<button class="wcell ${counts[i] ? "go" : ""}" data-goto="${i}" aria-label="${shortDay(d.date)}: ${counts[i]} flyable launches">` +
+        `<span class="d">${shortDay(d.date)}</span><span class="n">${counts[i]}</span></button>`).join("")}</div>
+    </div></article>`;
+
+  $("board").innerHTML = overview + list.map(({ s, cols, goDays }) => {
+    const sector = s.good.join(" ") + (s.marginal.length ? " (" + s.marginal.join(" ") + ")" : "");
+    const cells = cols.map((c, i) => {
+      const a = c.a, st = c.st;
+      const cls = a.verdict === "no" ? "" : a.verdict;
+      const rain = st.rain >= 0.2 ? (st.rain < 1 ? st.rain.toFixed(1) : Math.round(st.rain)) + " mm" : "dry";
+      const win = a.verdict === "closed" ? "closed" : a.verdict === "go" ? a.win[0] + "–" + a.win[1] : a.verdict === "marg" ? "marg." : "no";
+      const mv = modelVerdicts(s, state.forecast[s.id][i]);
+      const mTxt = mv.length ? mv.filter(m => m.verdict === "go").length + "/" + mv.length : "";
+      const label = `${shortDay(days[i].date)}: ${Math.round(st.speed)} km/h from ${compass(st.dir)}, gusts to ${Math.round(st.gust)}, rain ${st.rain.toFixed(1)} mm` +
+        (st.prob != null ? `, probability up to ${st.prob}%` : "") + `. ${win}` + (mTxt ? `. Other models flyable: ${mTxt}` : "");
+      return `<button class="wcell ${cls}" data-goto="${i}" title="${esc(label)}" aria-label="${esc(label)}">` +
+        `<span class="d">${shortDay(days[i].date)}</span>${arrowSvg(st.dir)}<span class="s">${Math.round(st.speed)}</span>` +
+        `<span class="r${st.rain >= 0.2 ? " wet" : ""}">${rain}</span><span class="w">${win}</span>${mTxt ? `<span class="m">${mTxt}</span>` : ""}</button>`;
+    }).join("");
+    const pillCls = goDays ? "go" : cols.some(c => c.a.verdict === "marg") ? "marg" : "";
+    return `<article class="site v-${goDays ? "go" : pillCls === "marg" ? "marg" : "no"}">
+      <div class="row">
+        <div class="id">
+          ${roseSvg(s, null)}
+          <div>
+            <h3>${esc(s.name)}</h3>
+            <div class="meta">${s.alt} m · ${esc(s.town)} · wind ${sector}</div>
+            <div class="verdict"><span class="pill ${pillCls}">${goDays} of ${cols.length} days flyable</span></div>
+          </div>
+        </div>
+        <div class="week">${cells}</div>
+      </div>
+    </article>`;
+  }).join("");
+}
+
+function render() {
+  const week = state.view === "week";
+  $("tabs").hidden = week; $("summary").hidden = week; $("best").hidden = week;
+  document.querySelectorAll("[data-view]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === state.view)));
+  if (week) renderWeek(); else renderDay();
+}
+
+function renderDay() {
+  const days = state.forecast[SITES[0].id];
+  if (state.day >= days.length) state.day = 0;
+  const date = days[state.day].date;
+  const now = romeNow();
+
+  $("tabs").innerHTML = days.map((d, i) => {
+    const l = dayLabel(d.date, i);
+    return `<button class="tab" data-day="${i}" aria-pressed="${i === state.day}">${l.top}<small>${l.sub}</small></button>`;
+  }).join("");
+
+  const all = SITES.map(s => assess(s, state.forecast[s.id][state.day]));
+  const count = v => all.filter(a => a.verdict === v).length;
+  $("summary").innerHTML =
+    `<div class="tile go"><div class="n">${count("go")}</div><div class="l">flyable</div></div>` +
+    `<div class="tile marg"><div class="n">${count("marg")}</div><div class="l">marginal</div></div>` +
+    `<div class="tile no"><div class="n">${count("no") + count("closed")}</div><div class="l">not flyable or closed</div></div>`;
+
+  const top = all.filter(a => a.verdict === "go").sort((a, b) => b.goHours - a.goHours).slice(0, 3);
+  $("best").innerHTML = top.length
+    ? "Best bets: " + top.map(a => `<b>${esc(a.site.name)}</b> ${hh(a.win[0])} to ${hh(a.win[1])}`).join(", ") + "."
+    : "No launch has a clean flyable window on this day.";
+
+  let list = all.filter(a => state.area === "all" || a.site.area === state.area);
+  if (state.best) {
+    const rank = { go: 0, marg: 1, no: 2, closed: 3 };
+    list = list.slice().sort((a, b) => rank[a.verdict] - rank[b.verdict] || b.goHours - a.goHours);
+  }
+
+  $("board").innerHTML = list.map(a => {
+    const s = a.site;
+    const focusHour = (date === now.date && a.hours.find(h => h.hour === now.hour))
+      || (a.win && a.hours.find(h => h.hour === Math.floor((a.win[0] + a.win[1] - 1) / 2)))
+      || a.hours.find(h => h.hour === 13) || a.hours[Math.floor(a.hours.length / 2)];
+    const pill = { go: "Flyable", marg: "Marginal", no: "No", closed: "Closed" }[a.verdict];
+    const win = a.win && a.verdict !== "closed" ? `<span class="window">${hh(a.win[0])} to ${hh(a.win[1])}</span>` : "";
+    const why = a.why ? `<span class="why">${esc(a.why)}</span>` : "";
+    const sector = s.good.join(" ") + (s.marginal.length ? " (" + s.marginal.join(" ") + ")" : "");
+    const cells = a.hours.map(h => {
+      const cls = h.v.level === "no" ? "" : h.v.level;
+      const isNow = date === now.date && h.hour === now.hour ? " now" : "";
+      return `<div class="cell ${cls}${isNow}" title="${hh(h.hour)}: ${Math.round(h.speed)} km/h from ${compass(h.dir)}, gusts ${Math.round(h.gust)}. ${esc(h.v.why)}">` +
+        `<span class="h">${h.hour}</span>${arrowSvg(h.dir)}<span class="s">${Math.round(h.speed)}</span></div>`;
+    }).join("");
+    const rows = a.hours.map(h =>
+      `<tr><td>${hh(h.hour)}</td><td>${Math.round(h.speed)}</td><td>${Math.round(h.gust)}</td><td>${compass(h.dir)} ${Math.round(h.dir)}°</td>` +
+      `<td>${h.rain ? h.rain.toFixed(1) : "0"}${h.prob != null ? " / " + h.prob + "%" : ""}</td>` +
+      `<td class="${h.v.level}">${esc(h.v.why)}</td></tr>`).join("");
+    const mv = modelVerdicts(s, state.forecast[s.id][state.day]);
+    const mGo = mv.filter(m => m.verdict === "go").length;
+    const agree = mv.length ? `<span class="why">${mGo} of ${mv.length} other models flyable</span>` : "";
+    const chips = mv.length ? `<div class="models">${mv.map(m =>
+      `<span class="mchip ${m.verdict === "no" ? "" : m.verdict}">${esc(m.label)} ${m.verdict === "go" ? m.win[0] + "–" + m.win[1] : m.verdict === "marg" ? "marg." : m.verdict === "closed" ? "closed" : "no"}</span>`).join("")}</div>` : "";
+    const near = nearStations(s);
+    const stLine = x => {
+      const v = judge(s, { speed: x.st.speed, gust: x.st.speed, dir: x.st.dir, rain: 0, code: 0 });
+      return `<span class="mchip ${v.level === "no" ? "" : v.level}">${Math.round(x.st.speed)} km/h ${compass(x.st.dir)}</span> ${esc(x.st.name)}, ${x.km < 10 ? x.km.toFixed(1) : Math.round(x.km)} km away at ${x.st.alt} m, ${stationTime(x.st)}`;
+    };
+    const nowLine = near.length ? `<div class="nowline"><b>Measured now:</b> ${stLine(near[0])}</div>` : "";
+    const stFacts = state.stations
+      ? (near.length ? near.map(stLine).join("<br>") : "No ARPAL anemometer within 15 km.")
+      : "Station data is not available on this page.";
+    const link = s.link ? `<dt>Live</dt><dd><a href="${s.link[1]}">${esc(s.link[0])}</a></dd>` : "";
+    return `<article class="site v-${a.verdict}">
+      <div class="row">
+        <div class="id">
+          ${roseSvg(s, focusHour)}
+          <div>
+            <h3>${esc(s.name)}</h3>
+            <div class="meta">${s.alt} m · ${esc(s.town)} · wind ${sector}</div>
+            <div class="verdict"><span class="pill ${a.verdict}">${pill}</span>${win}${why}${agree}</div>
+          </div>
+        </div>
+        <div class="right"><div class="strip">${cells}</div>${chips}${nowLine}</div>
+      </div>
+      <details data-id="${s.id}" ${state.open.has(s.id) ? "open" : ""}>
+        <summary>Site notes and hourly table</summary>
+        <div class="more">
+          <dl class="facts">
+            <dt>Sector</dt><dd>${sector}${s.avoid.length ? ", avoid " + s.avoid.join(" ") : ""}</dd>
+            <dt>Landing</dt><dd>${esc(s.landing)}</dd>
+            <dt>Access</dt><dd>${esc(s.access)}</dd>
+            <dt>Notes</dt><dd>${esc(s.notes)}</dd>
+            ${s.conflict ? `<dt>Sources differ</dt><dd>${esc(s.conflict)}</dd>` : ""}
+            <dt>Season</dt><dd>${s.beach ? "Beach landing: closed 1 May to 30 September." : "No summer beach closure listed."}</dd>
+            <dt>Stations</dt><dd>${stFacts}</dd>
+            ${link}
+            <dt>Map</dt><dd><a href="https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lon}">${s.gps ? "Launch coordinates from a published source" : "Approximate area only"}</a></dd>
+            <dt>Sources</dt><dd>${s.src.map(k => `<a href="${SOURCES[k][1]}">${esc(SOURCES[k][0])}</a>`).join(", ")}${s.src.length === 1 ? " (single source)" : ""}</dd>
+          </dl>
+          <div class="tablewrap"><table>
+            <thead><tr><th>Hour</th><th>Wind</th><th>Gust</th><th>From</th><th>Rain mm</th><th>Verdict</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table></div>
+        </div>
+      </details>
+    </article>`;
+  }).join("");
+}
+
+function setStatus(kind, html) {
+  $("status").className = "status " + kind;
+  $("statusText").innerHTML = html;
+}
+
+// ---------------------------------------------------------------------------
+// Events
+// ---------------------------------------------------------------------------
+$("tabs").addEventListener("click", e => {
+  const b = e.target.closest("[data-day]"); if (!b) return;
+  state.day = +b.dataset.day; render();
+});
+document.querySelectorAll("[data-area]").forEach(b => b.addEventListener("click", () => {
+  state.area = b.dataset.area;
+  document.querySelectorAll("[data-area]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  render();
+}));
+document.querySelectorAll("[data-view]").forEach(b => b.addEventListener("click", () => { state.view = b.dataset.view; render(); }));
+$("board").addEventListener("click", e => {
+  const b = e.target.closest("[data-goto]"); if (!b) return;
+  state.day = +b.dataset.goto; state.view = "day"; render();
+  $("tabs").scrollIntoView({ block: "start" });
+});
+$("sortBtn").addEventListener("click", () => {
+  state.best = !state.best; $("sortBtn").setAttribute("aria-pressed", String(state.best)); render();
+});
+$("board").addEventListener("toggle", e => {
+  const d = e.target; if (!d.dataset || !d.dataset.id) return;
+  if (d.open) state.open.add(d.dataset.id); else state.open.delete(d.dataset.id);
+}, true);
+[["limWind", "wind"], ["limGust", "gust"], ["limLight", "light"]].forEach(([id, key]) => {
+  $(id).value = limits[key];
+  $(id).addEventListener("change", () => {
+    const v = parseFloat($(id).value);
+    if (!isFinite(v)) { $(id).value = limits[key]; return; }
+    limits[key] = v;
+    try { localStorage.setItem("llb-limits", JSON.stringify(limits)); } catch (e) { /* storage unavailable */ }
+    render();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Start: show the example week at once, then swap in the live forecast.
+// ---------------------------------------------------------------------------
+state.models = exampleModels(state.forecast);
+render();
+setStatus("", "Loading the live forecast from Open-Meteo…");
+
+function liveStatus() {
+  const n = romeNow();
+  const parts = [`<b>Live forecast.</b> Open-Meteo, loaded ${n.date} at ${String(n.hour).padStart(2, "0")}h Rome time.`];
+  parts.push(state.models ? `Model check: ${state.models.length} models.` : "Model check not loaded.");
+  parts.push(state.stations ? `Measured wind: ${state.stations.length} ARPAL stations.` : "Station readings not loaded.");
+  setStatus("live", parts.join(" ") + " Reload the page to refresh.");
+}
+
+function snapshotStatus(at) {
+  const when = at.toLocaleString("en-GB", { timeZone: "Europe/Rome", weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  const hours = (Date.now() - at.getTime()) / 3600e3;
+  const age = hours < 1 ? "under an hour old" : hours < 36 ? Math.round(hours) + " h old" : Math.round(hours / 24) + " days old";
+  const stale = hours > 12;
+  setStatus(stale ? "demo" : "live", `<b>${stale ? "Old forecast snapshot." : "Forecast snapshot."}</b> Real Open-Meteo data saved on ${when} Rome time (${age}), with ${state.models ? state.models.length : 0} models` +
+    (state.stations && state.stations.length ? ` and ${state.stations.length} ARPAL station readings.` : ". Station readings are shown only while under 3 h old.") +
+    (stale ? " Ask Claude to refresh it." : ""));
+}
+
+// 1) A data.json snapshot published next to the page (used where the page cannot call the weather services itself).
+// 2) A direct call to Open-Meteo and ARPAL, which replaces the snapshot when it works.
+async function loadSnapshot() {
+  const res = await fetch("data.json", { cache: "no-store" });
+  if (!res.ok) throw new Error("no snapshot");
+  const snap = await res.json();
+  const fc = parseOpenMeteo(snap.primary);
+  state.forecast = fc; state.day = 0; state.snapshot = true;
+  state.models = snap.models ? MODELS.map(m => ({ label: m.label, fc: parseModel(snap.models, m.id, fc) })) : null;
+  state.stations = snap.stations ? parseStations(snap.stations) : null;
+  snapshotStatus(new Date(snap.fetchedAt));
+  render();
+}
+
+loadSnapshot().catch(() => {}).then(() => {
+  fetchStations().then(st => { state.stations = st; if (state.live) liveStatus(); render(); }).catch(() => {});
+  return fetchLive();
+}).then(fc => {
+  state.forecast = fc; state.models = null; state.live = true; state.day = 0;
+  liveStatus(); render();
+  return fetchModels(fc).then(m => { state.models = m; liveStatus(); render(); }).catch(() => {});
+}).catch(() => {
+  if (state.snapshot) return;
+  setStatus("demo", "<b>Example data, not a real forecast.</b> This page could not reach Open-Meteo, so the winds and model chips below are invented to show how the board works. Open the HTML file in a normal browser, or host it on any web space, to get the live forecast and station readings.");
+});
+</script>
+</body>
+</html>

@@ -225,7 +225,7 @@ footer { font-size: 12px; color: var(--muted); }
       <li>Each cell is one daylight hour. The arrow shows where the wind blows to, the number is mean wind in km/h.</li>
       <li>The compass next to each name shows the launch sector: solid green is good, amber is marginal, red is a direction to avoid.</li>
       <li>A wind direction counts as in sector within 22.5° of a listed direction, and marginal up to 40°.</li>
-      <li>Model check: the main verdict uses the Open-Meteo best-match forecast. The chips under each strip show what ICON-2I, ICON-D2, AROME, ICON-EU and ECMWF say for the same launch and day. The 2 km models only reach two or three days ahead. When they disagree, trust the verdict less.</li>
+      <li>Model check: the main verdict uses the Open-Meteo best-match forecast. The chips under each strip show what ICON-2I, ICON-D2, AROME, ICON-EU and ECMWF say for the same launch and day. The 2 km models only reach two or three days ahead. A model is left out on the days when the main forecast is that same model. When they disagree, trust the verdict less.</li>
       <li>Measured: the latest reading from the nearest ARPAL anemometer within 15 km, coloured against the launch sector. A station in a harbour or on another ridge can read very differently from the launch.</li>
       <li>Week overview: each cell is one day, with the mean daylight wind in km/h, the rain total over the 24 hours and the longest flyable window, plus how many of the other models call the day flyable. Tap a day to open its hourly board.</li>
     </ul>
@@ -644,6 +644,9 @@ function modelVerdicts(site, day) {
   return (state.models || []).map(m => {
     const d = m.fc[site.id] && m.fc[site.id][day.date];
     if (!d || d.hours.length < Math.max(3, day.hours.length * 0.6)) return null;
+    // Open-Meteo's best match is often one of these models: an identical copy is not a second opinion.
+    const mine = {}; day.hours.forEach(h => mine[h.hour] = h);
+    if (d.hours.every(h => mine[h.hour] && mine[h.hour].speed === h.speed && mine[h.hour].dir === h.dir)) return null;
     const a = assess(site, d);
     return { label: m.label, verdict: a.verdict, win: a.win };
   }).filter(Boolean);

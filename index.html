@@ -656,6 +656,13 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const hh = h => String(h).padStart(2, "0") + ":00";
 
+// Google Maps links for a launch: the point itself and driving directions to it.
+function mapLinks(s) {
+  const q = s.lat + "," + s.lon, tag = s.gps ? "" : " (approx.)";
+  return `<a href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener">Map${tag}</a> · ` +
+    `<a href="https://www.google.com/maps/dir/?api=1&destination=${q}" target="_blank" rel="noopener">Directions</a>`;
+}
+
 function arrowSvg(dir) {
   // Drawn pointing up; rotated to point where the wind blows TO.
   return `<svg viewBox="0 0 16 16" aria-hidden="true"><g transform="rotate(${(dir + 180) % 360} 8 8)"><path d="M8 1.5 12 8H9.3v6.5H6.7V8H4z" fill="currentColor"/></g></svg>`;
@@ -748,6 +755,7 @@ function renderWeek() {
           <div>
             <h3>${esc(s.name)}</h3>
             <div class="meta">${s.alt} m · ${esc(s.town)} · wind ${sector}</div>
+            <div class="meta">${mapLinks(s)}</div>
             <div class="verdict"><span class="pill ${pillCls}">${goDays} of ${cols.length} days flyable</span></div>
           </div>
         </div>
@@ -834,6 +842,7 @@ function renderDay() {
           <div>
             <h3>${esc(s.name)}</h3>
             <div class="meta">${s.alt} m · ${esc(s.town)} · wind ${sector}</div>
+            <div class="meta">${mapLinks(s)}</div>
             <div class="verdict"><span class="pill ${a.verdict}">${pill}</span>${win}${why}${agree}</div>
           </div>
         </div>
@@ -851,7 +860,7 @@ function renderDay() {
             <dt>Season</dt><dd>${s.beach ? "Beach landing: closed 1 May to 30 September." : "No summer beach closure listed."}</dd>
             <dt>Stations</dt><dd>${stFacts}</dd>
             ${link}
-            <dt>Map</dt><dd><a href="https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lon}">${s.gps ? "Launch coordinates from a published source" : "Approximate area only"}</a></dd>
+            <dt>Map</dt><dd>${mapLinks(s)}. ${s.gps ? "Launch coordinates from a published source: check them against the site before trusting the last metres." : "Estimated position: it shows the area, not the launch itself."}</dd>
             <dt>Sources</dt><dd>${s.src.map(k => `<a href="${SOURCES[k][1]}">${esc(SOURCES[k][0])}</a>`).join(", ")}${s.src.length === 1 ? " (single source)" : ""}</dd>
           </dl>
           <div class="tablewrap"><table>

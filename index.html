@@ -242,13 +242,13 @@ footer { font-size: 12px; color: var(--muted); }
     <ul>
       <li>This is a model forecast for wind at 10 m above ground on a grid of a few kilometres. It does not see local sea breeze, rotor, thermals or cloud base. The windsock and the local pilots decide.</li>
       <li>Launches that land on a beach are closed from 1 May to 30 September. The board marks them closed on those dates.</li>
-      <li>Launch positions come from published sources where one exists. Six are still estimates, only good enough to pick the forecast point: each launch says which it is.</li>
+      <li>Launch positions come from published sources where one exists, checked against terrain height. Four use a nearby landmark and two are estimates: each launch says which it is.</li>
       <li>Wind sectors come from pilot websites of different ages. Where they disagree the board takes the cautious reading and says so in the site notes. Landing agreements and access rules change: check with the local club.</li>
       <li>Live stations: <a href="https://omirl.regione.liguria.it/">ARPAL OMIRL network</a>, <a href="https://holfuy.com/it/camera/855">Bergeggi (Holfuy)</a>, <a href="https://holfuy.com/it/weather/962">Finale Ligure (Holfuy)</a>.</li>
     </ul>
   </section>
 
-  <footer>Site data: <a href="https://parapendioliguria.it/decolli-parapendio-liguria/">parapendioliguria.it</a>, <a href="https://www.finalevolo.it/sitiliguria.htm">finalevolo.it</a>, <a href="https://www.montagnadilombardia.com/liguria.html">montagnadilombardia.com</a>, <a href="https://www.marcocilli.it/hobbies/vololibero_ponenteflight/vololiberodecolli.html">Ponente Flight</a>, <a href="http://www.rocchettanervina.com/luca/parapendio.html">rocchettanervina.com</a>, <a href="https://www.paragliding365.com/index-p-flightarea1_17_167.html">paragliding365.com</a>. Stations: <a href="https://omirl.regione.liguria.it/">ARPAL OMIRL</a>. Forecast: <a href="https://open-meteo.com/">Open-Meteo</a>. Times are Europe/Rome.</footer>
+  <footer>Site data: <a href="https://parapendioliguria.it/decolli-parapendio-liguria/">parapendioliguria.it</a>, <a href="https://www.finalevolo.it/sitiliguria.htm">finalevolo.it</a>, <a href="https://www.montagnadilombardia.com/liguria.html">montagnadilombardia.com</a>, <a href="https://www.marcocilli.it/hobbies/vololibero_ponenteflight/vololiberodecolli.html">Ponente Flight</a>, <a href="http://www.rocchettanervina.com/luca/parapendio.html">rocchettanervina.com</a>, <a href="https://www.paragliding365.com/index-p-flightarea1_17_167.html">paragliding365.com</a>, <a href="https://www.openstreetmap.org/">OpenStreetMap</a>. Stations: <a href="https://omirl.regione.liguria.it/">ARPAL OMIRL</a>. Forecast: <a href="https://open-meteo.com/">Open-Meteo</a>. Times are Europe/Rome.</footer>
 </div>
 
 <script>
@@ -264,7 +264,8 @@ const SOURCES = {
   ML: ["montagnadilombardia.com", "https://www.montagnadilombardia.com/liguria.html"],
   PF: ["Ponente Flight", "https://www.marcocilli.it/hobbies/vololibero_ponenteflight/vololiberodecolli.html"],
   RN: ["rocchettanervina.com", "http://www.rocchettanervina.com/luca/parapendio.html"],
-  P3: ["paragliding365.com", "https://www.paragliding365.com/index-p-flightarea1_17_167.html"]
+  P3: ["paragliding365.com", "https://www.paragliding365.com/index-p-flightarea1_17_167.html"],
+  OSM: ["OpenStreetMap", "https://www.openstreetmap.org/"]
 };
 
 // Ordered west to east. "gps: true" means the coordinates come from a published source;
@@ -281,13 +282,13 @@ const SITES = [
     access: "Official club shuttle only. The fire road is closed to private vehicles, with heavy fines.",
     notes: "A high-voltage line crosses the slope below the launch. A lower launch at 310 m faces SE.",
     conflict: "One source gives SE and S, another E, S and light SW. E and SW are shown as marginal." },
-  { id: "mendatica", name: "Mendatica", town: "Mendatica (IM)", area: "Imperia", alt: 1270, lat: 44.09694, lon: 7.79694, gps: true,
-    good: ["SE"], marginal: ["S"], avoid: [], beach: false, src: ["FV", "P3"],
+  { id: "mendatica", name: "Mendatica", town: "Mendatica (IM)", area: "Imperia", alt: 1270, lat: 44.08964, lon: 7.79261, gps: true,
+    good: ["SE"], marginal: ["S"], avoid: [], beach: false, src: ["FV", "P3", "OSM"],
     landing: "Small field at 750 m, not recommended for beginners: you can come up short. Top landing is the easier option.",
     access: "South side of Colle San Bernardo.",
     notes: "Wide grass launch. Thermals release along the ridges east of the launch." },
-  { id: "rollo", name: "Rollo", town: "Andora (SV)", area: "Savona", alt: 340, lat: 43.937, lon: 8.127,
-    good: ["NE", "E"], marginal: [], avoid: [], beach: true, src: ["PL"],
+  { id: "rollo", name: "Rollo", town: "Andora (SV)", area: "Savona", alt: 340, lat: 43.94586, lon: 8.12473, gps: true,
+    good: ["NE", "E"], marginal: [], avoid: [], beach: true, src: ["PL", "OSM"],
     landing: "Official Andora beach. Laigueglia beach only if you pass Capo Mele with at least 800 m.",
     access: "Road from Cervo, then about 10 min on foot.",
     notes: "Ridge launch. Overflying the Capo Mele radar centre is forbidden." },
@@ -300,8 +301,8 @@ const SITES = [
     good: ["NE", "E"], marginal: [], avoid: [], beach: true, src: ["PL", "FV", "ML"],
     landing: "Alassio beach. Laigueglia beach is smaller and not recommended.",
     access: "Road from Alassio past the abandoned Hotel Puerta del Sol. The launch is below the road, marked by wind indicators.",
-    notes: "Small, short and steep grass launch for about two wings. Very low: without a good wind you are on the beach in seconds. Overflying the Capo Mele radar centre is forbidden." },
-  { id: "pisciavino", name: "Monte Pisciavino", town: "Alassio (SV)", area: "Savona", alt: 580, lat: 44.01117, lon: 8.16247, gps: true,
+    notes: "Sources give about 195 m, but the published coordinates sit at about 90 m, just above the railway: check which launch is in use. Small, short and steep grass launch for about two wings. Very low: without a good wind you are on the beach in seconds. Overflying the Capo Mele radar centre is forbidden." },
+  { id: "pisciavino", name: "Monte Pisciavino", town: "Alassio (SV)", area: "Savona", alt: 580, lat: 44.02873, lon: 8.16345, near: "Position of the Monte Pisciavino summit. The launch is next to it.",
     good: ["E", "SE", "S"], marginal: [], avoid: [], beach: true, src: ["PL", "FV", "ML"],
     landing: "Alassio beach, east side. Always check the space available.",
     access: "From Alassio towards Vegliasco, then a rough dirt road to the transmitters. 4x4 recommended, or about 20 min on foot.",
@@ -311,7 +312,7 @@ const SITES = [
     landing: "Two small fields at 100 m and 70 m with light turbulence on approach. Not for inexperienced pilots: top landing is simpler when conditions allow.",
     access: "SP 35 from Toirano towards Balestrino, then the narrow Via Groa for about 2 km.",
     notes: "Very wide, easy launch. The valley to the west behind the launch is lee side: stay out of it." },
-  { id: "borgio", name: "Borgio Verezzi", town: "Borgio Verezzi (SV)", area: "Savona", alt: 260, lat: 44.165, lon: 8.305,
+  { id: "borgio", name: "Borgio Verezzi", town: "Borgio Verezzi (SV)", area: "Savona", alt: 260, lat: 44.16906, lon: 8.31477, near: "Position of the old windmill above Verezzi, at the same height as the launch. The launch itself is by the old quarry nearby.",
     good: ["SE", "S"], marginal: [], avoid: [], beach: true, src: ["FV"],
     landing: "Borgio Verezzi beach, very wide.",
     access: "Road from the Borgio level crossing towards Verezzi, right at the Mulino sign, park at the old quarry. 200 m on foot.",
@@ -328,7 +329,7 @@ const SITES = [
     landing: "Noli beach, in its first stretch towards SE. If the wind turns S or N the return gets difficult.",
     access: "Le Manie plateau, past the Ferrin trattoria, then about 2 km of dirt road.",
     notes: "Works with NE only, often when the other sites do not. Do not fly with N wind. Small launch, one pilot at a time, expect a queue. If the wind backs to E, move to Bergeggi or Varigotti." },
-  { id: "ligea", name: "Spotorno Ligea", town: "Spotorno (SV)", area: "Savona", alt: 150, lat: 44.23663, lon: 8.42295, gps: true,
+  { id: "ligea", name: "Spotorno Ligea", town: "Spotorno (SV)", area: "Savona", alt: 150, lat: 44.23497, lon: 8.42448, gps: true,
     good: ["SE", "S"], marginal: [], avoid: [], beach: true, src: ["PL", "FV", "ML", "P3"],
     landing: "Spotorno beach, east side.",
     access: "Via Antica Romana from Spotorno: very steep narrow road to a small clearing, then a short walk.",
@@ -350,7 +351,7 @@ const SITES = [
     access: "On foot, about 30 min from the car park on the Giavarosso road to the Madonna della Guardia sanctuary.",
     notes: "Launch from the church forecourt, uneven ground, one pilot at a time. Soaring on the sea side of Monte Grosso.",
     conflict: "All three sources give SE, S and SW. Only one adds E, shown as marginal." },
-  { id: "beigua", name: "Monte Beigua", town: "Cogoleto (GE)", area: "Genova", alt: 1100, lat: 44.420, lon: 8.577,
+  { id: "beigua", name: "Monte Beigua", town: "Cogoleto (GE)", area: "Genova", alt: 1100, lat: 44.42804, lon: 8.58673, near: "Position of Rifugio Pratorotondo. The launch is about 20 min on foot from it.",
     good: ["SE", "S", "SW"], marginal: [], avoid: [], beach: true, src: ["PL"],
     landing: "Cogoleto beach, far east end by the Lerone stream mouth. Emergency fields and the Arenzano golf course as alternatives.",
     access: "A10 exit Arenzano or Varazze, Beigua park road to Rifugio Pratorotondo. About 1 h by car plus 20 min on foot.",
@@ -361,8 +362,8 @@ const SITES = [
     access: "A12 exit Genova Est, Molassana, road to Creto, then Via ai Villini di Creto and a dirt track.",
     notes: "Steep launch, one wing at a time. Power line on the left of the launch. Cables near the Casalino field are hard to see: approach it from the north.",
     conflict: "Both sources give S and SW. Only one adds SE, shown as marginal." },
-  { id: "maggio", name: "Monte Maggio", town: "Casella / Savignone (GE)", area: "Genova", alt: 980, lat: 44.55556, lon: 9.00528, gps: true,
-    good: ["SE", "S"], marginal: ["SW"], avoid: [], beach: false, src: ["PL", "FV", "P3"],
+  { id: "maggio", name: "Monte Maggio", town: "Casella / Savignone (GE)", area: "Genova", alt: 980, lat: 44.55572, lon: 9.00785, gps: true,
+    good: ["SE", "S"], marginal: ["SW"], avoid: [], beach: false, src: ["PL", "FV", "P3", "OSM"],
     landing: "Casella, about 420 m: very large and visible from the launch.",
     access: "A7 exit Busalla, follow Casella, up to the Colonia and walk about 30 min to the chapel.",
     notes: "Steep but easy launch. Right after take-off do not drift left: a Venturi makes it hard to get out. With SW valley breeze use the thermal to the right. Open all year." },
@@ -380,13 +381,13 @@ const SITES = [
     good: ["SE"], marginal: ["S"], avoid: [], beach: true, src: ["PL", "P3"],
     landing: "Riva Trigoso beach.",
     access: "A12 exit Sestri Levante, follow Riva Trigoso. 15 min on foot.",
-    notes: "Short, steep, stony launch. If the ridge does not hold right after take-off you are on the lee side: go and land. Overflying the shipyard is forbidden (military area)." },
+    notes: "Sources disagree on the height: 225 m or 130 m. The mapped point is at about 100 m. Short, steep, stony launch. If the ridge does not hold right after take-off you are on the lee side: go and land. Overflying the shipyard is forbidden (military area)." },
   { id: "rena", name: "Riva Trigoso Renà", town: "Sestri Levante (GE)", area: "Genova", alt: 150, lat: 44.25361, lon: 9.43611, gps: true,
     good: ["SW"], marginal: ["S", "W"], avoid: [], beach: true, src: ["PL", "P3"],
     landing: "Riva Trigoso beach.",
     access: "A12 exit Sestri Levante, follow Riva Trigoso. 4x4 only, or about 35 min on foot.",
     notes: "Small, narrow, flat earth launch. Overflying the shipyard is forbidden (military area)." },
-  { id: "bonassola", name: "Bonassola", town: "Bonassola (SP)", area: "La Spezia", alt: 530, lat: 44.196, lon: 9.575,
+  { id: "bonassola", name: "Bonassola", town: "Bonassola (SP)", area: "La Spezia", alt: 530, lat: 44.18587, lon: 9.60202, near: "Position of the Monte Rossola summit, chosen because its height matches the launch. Not confirmed as the launch.",
     good: ["SE", "S", "SW"], marginal: [], avoid: [], beach: true, src: ["PL"],
     landing: "Small beach squeezed between two headlands. Check the space available.",
     access: "A12 exit Carrodano or Deiva, follow Bonassola. 10 min on foot.",
@@ -658,7 +659,7 @@ const hh = h => String(h).padStart(2, "0") + ":00";
 
 // Google Maps links for a launch: the point itself and driving directions to it.
 function mapLinks(s) {
-  const q = s.lat + "," + s.lon, tag = s.gps ? "" : " (approx.)";
+  const q = s.lat + "," + s.lon, tag = s.gps ? "" : s.near ? " (nearby)" : " (approx.)";
   return `<a href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener">Map${tag}</a> · ` +
     `<a href="https://www.google.com/maps/dir/?api=1&destination=${q}" target="_blank" rel="noopener">Directions</a>`;
 }
@@ -860,7 +861,7 @@ function renderDay() {
             <dt>Season</dt><dd>${s.beach ? "Beach landing: closed 1 May to 30 September." : "No summer beach closure listed."}</dd>
             <dt>Stations</dt><dd>${stFacts}</dd>
             ${link}
-            <dt>Map</dt><dd>${mapLinks(s)}. ${s.gps ? "Launch coordinates from a published source: check them against the site before trusting the last metres." : "Estimated position: it shows the area, not the launch itself."}</dd>
+            <dt>Map</dt><dd>${mapLinks(s)}. ${s.gps ? "Launch coordinates from a published source: check them against the site before trusting the last metres." : s.near ? esc(s.near) : "Estimated position: it shows the area, not the launch itself."}</dd>
             <dt>Sources</dt><dd>${s.src.map(k => `<a href="${SOURCES[k][1]}">${esc(SOURCES[k][0])}</a>`).join(", ")}${s.src.length === 1 ? " (single source)" : ""}</dd>
           </dl>
           <div class="tablewrap"><table>

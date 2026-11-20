@@ -26,6 +26,8 @@
   --stop: #b3261e;
   --stop-bg: #f7d9d6;
   --rain: #1c6fb5;
+  --off: #5a46b8;
+  --off-bg: #e4dffa;
   --font-display: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
   --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
@@ -37,7 +39,7 @@
     --go: #5fd391; --go-bg: #14432a;
     --marg: #f2b84b; --marg-bg: #4a3608;
     --no: #7f8d9a; --no-bg: #1f2c38;
-    --stop: #ff8a80; --stop-bg: #4a1c19; --rain: #6db6f2;
+    --stop: #ff8a80; --stop-bg: #4a1c19; --rain: #6db6f2; --off: #b5a8ff; --off-bg: #2b2460;
   }
 }
 :root[data-theme="dark"] {
@@ -47,7 +49,7 @@
   --go: #5fd391; --go-bg: #14432a;
   --marg: #f2b84b; --marg-bg: #4a3608;
   --no: #7f8d9a; --no-bg: #1f2c38;
-  --stop: #ff8a80; --stop-bg: #4a1c19; --rain: #6db6f2;
+  --stop: #ff8a80; --stop-bg: #4a1c19; --rain: #6db6f2; --off: #b5a8ff; --off-bg: #2b2460;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
@@ -99,6 +101,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 .board { display: flex; flex-direction: column; gap: 8px; }
 .site { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; border-left: 5px solid var(--no); }
+.site.v-off { border-left-color: var(--off); }
 .site.v-go { border-left-color: var(--go); } .site.v-marg { border-left-color: var(--marg); } .site.v-closed { border-left-color: var(--stop); }
 .row { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 12px; padding: 10px 12px; align-items: center; }
 .id { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 10px; align-items: center; }
@@ -110,6 +113,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .pill.go { background: var(--go-bg); color: var(--go); }
 .pill.marg { background: var(--marg-bg); color: var(--marg); }
 .pill.closed { background: var(--stop-bg); color: var(--stop); }
+.pill.off { background: var(--off-bg); color: var(--off); }
 .window { font-weight: 600; font-size: 14px; }
 .why { font-size: 12px; color: var(--muted); }
 
@@ -122,6 +126,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .cell.go { background: var(--go-bg); color: var(--go); border-color: var(--go); }
 .cell.marg { background: var(--marg-bg); color: var(--marg); border-style: dashed; border-color: var(--marg); }
 .cell.stop { background: var(--stop-bg); color: var(--stop); }
+.cell.off { background: var(--off-bg); color: var(--off); border: 1px dotted var(--off); }
 .cell.now { box-shadow: 0 0 0 2px var(--accent); }
 .site.v-closed .strip { opacity: .55; }
 
@@ -135,6 +140,7 @@ table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
 th, td { text-align: right; padding: 3px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
 th { font-weight: 500; color: var(--muted); }
 th:first-child, td:first-child, th:last-child, td:last-child { text-align: left; }
+td.off { color: var(--off); font-weight: 600; }
 td.go { color: var(--go); font-weight: 600; } td.marg { color: var(--marg); font-weight: 600; } td.stop { color: var(--stop); }
 
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
@@ -155,6 +161,7 @@ footer { font-size: 12px; color: var(--muted); }
   background: var(--no-bg); color: var(--no); border: 1px solid transparent; }
 .mchip.go { background: var(--go-bg); color: var(--go); border-color: var(--go); }
 .mchip.marg { background: var(--marg-bg); color: var(--marg); border: 1px dashed var(--marg); }
+.mchip.off { background: var(--off-bg); color: var(--off); border: 1px dotted var(--off); }
 .mchip.stop, .mchip.closed { background: var(--stop-bg); color: var(--stop); }
 .nowline { font-size: 12px; color: var(--muted); }
 .nowline b { color: var(--ink); font-weight: 600; }
@@ -172,6 +179,7 @@ footer { font-size: 12px; color: var(--muted); }
 .wcell.go { background: var(--go-bg); color: var(--go); border-color: var(--go); }
 .wcell.marg { background: var(--marg-bg); color: var(--marg); border-style: dashed; border-color: var(--marg); }
 .wcell.closed { background: var(--stop-bg); color: var(--stop); }
+.wcell.off { background: var(--off-bg); color: var(--off); border: 1px dotted var(--off); }
 .site.overview { border-left-color: var(--ink); }
 [hidden] { display: none !important; }
 
@@ -218,6 +226,7 @@ footer { font-size: 12px; color: var(--muted); }
     <div class="legend">
       <span><i class="cell go"></i> Flyable: wind in sector, within limits</span>
       <span><i class="cell marg"></i> Marginal: cross, light or near the limits</span>
+      <span><i class="cell off"></i> Light wind from outside the sector</span>
       <span><i class="cell"></i> No: wrong direction</span>
       <span><i class="cell stop"></i> No: too strong, rain or lee side</span>
     </div>
@@ -225,7 +234,7 @@ footer { font-size: 12px; color: var(--muted); }
       <li>Each cell is one daylight hour. The arrow shows where the wind blows to, the number is mean wind in km/h.</li>
       <li>The compass next to each name shows the launch sector: solid green is good, amber is marginal, red is a direction to avoid.</li>
       <li>A wind direction counts as in sector within 22.5° of a listed direction, and marginal up to 40°.</li>
-      <li>Light wind (below your "light" limit) is marginal, glide only, when it comes from the launch sector. From any other direction it is a no, however weak.</li>
+      <li>Light wind (below your "light" limit) is marginal, glide only, when it comes from the launch sector. From any other direction it gets its own violet mark: weak enough to launch in, but it does not come up the slope, so it is a nil-wind or tailwind take-off. From a listed lee direction it stays a no.</li>
       <li>Model check: the main verdict uses the Open-Meteo best-match forecast. The chips under each strip show what ICON-2I, ICON-D2, AROME, ICON-EU and ECMWF say for the same launch and day. The 2 km models only reach two or three days ahead. A model is left out on the days when the main forecast is that same model. When they disagree, trust the verdict less.</li>
       <li>Measured: the latest reading from the nearest ARPAL anemometer within 15 km, coloured against the launch sector. A station in a harbour or on another ridge can read very differently from the launch.</li>
       <li>Week overview: each cell is one day, with the mean daylight wind in km/h, the rain total over the 24 hours and the longest flyable window, plus how many of the other models call the day flyable. Tap a day to open its hourly board.</li>
@@ -433,7 +442,8 @@ function judge(site, h) {
   if (h.speed < limits.light) {
     // A light wind only helps if it comes up the launch. From behind or across it is a tailwind take-off.
     if (!lee && (g <= 40 || m <= 22.5)) return { level: "marg", why: "light wind, glide only" };
-    return { level: "no", why: "light wind from outside the sector (" + compass(h.dir) + ")" };
+    if (lee) return { level: "no", why: "light wind from the lee side (" + compass(h.dir) + ")" };
+    return { level: "off", why: "light wind, but from outside the sector (" + compass(h.dir) + ")" };
   }
   if (lee) return { level: "stop", why: "lee side from " + compass(h.dir) };
   if (g <= 22.5) {
@@ -467,10 +477,11 @@ function longestRun(hours, level) {
 function assess(site, day) {
   const hours = day.hours.map(h => ({ ...h, v: judge(site, h) }));
   const closed = closedOn(site, day.date);
-  const go = longestRun(hours, "go"), marg = longestRun(hours, "marg");
+  const go = longestRun(hours, "go"), marg = longestRun(hours, "marg"), off = longestRun(hours, "off");
   let verdict = "no", win = null, why = "";
   if (go) { verdict = "go"; win = go; }
   else if (marg) { verdict = "marg"; win = marg; why = hours.find(h => h.hour === marg[0]).v.why; }
+  else if (off) { verdict = "off"; win = off; why = hours.find(h => h.hour === off[0]).v.why; }
   else {
     const counts = {};
     hours.forEach(h => counts[h.v.why] = (counts[h.v.why] || 0) + 1);
@@ -747,7 +758,7 @@ function renderWeek() {
       const a = c.a, st = c.st;
       const cls = a.verdict === "no" ? "" : a.verdict;
       const rain = st.rain >= 0.2 ? (st.rain < 1 ? st.rain.toFixed(1) : Math.round(st.rain)) + " mm" : "dry";
-      const win = a.verdict === "closed" ? "closed" : a.verdict === "go" ? a.win[0] + "–" + a.win[1] : a.verdict === "marg" ? "marg." : "no";
+      const win = a.verdict === "closed" ? "closed" : a.verdict === "go" ? a.win[0] + "–" + a.win[1] : a.verdict === "marg" ? "marg." : a.verdict === "off" ? "light" : "no";
       const mv = modelVerdicts(s, state.forecast[s.id][i]);
       const mTxt = mv.length ? mv.filter(m => m.verdict === "go").length + "/" + mv.length : "";
       const label = `${shortDay(days[i].date)}: ${Math.round(st.speed)} km/h from ${compass(st.dir)}, gusts to ${Math.round(st.gust)}, rain ${st.rain.toFixed(1)} mm` +
@@ -796,7 +807,7 @@ function renderDay() {
   const count = v => all.filter(a => a.verdict === v).length;
   $("summary").innerHTML =
     `<div class="tile go"><div class="n">${count("go")}</div><div class="l">flyable</div></div>` +
-    `<div class="tile marg"><div class="n">${count("marg")}</div><div class="l">marginal</div></div>` +
+    `<div class="tile marg"><div class="n">${count("marg") + count("off")}</div><div class="l">marginal, ${count("off")} only for light off-sector wind</div></div>` +
     `<div class="tile no"><div class="n">${count("no") + count("closed")}</div><div class="l">not flyable or closed</div></div>`;
 
   const top = all.filter(a => a.verdict === "go").sort((a, b) => b.goHours - a.goHours).slice(0, 3);
@@ -806,7 +817,7 @@ function renderDay() {
 
   let list = all.filter(a => state.area === "all" || a.site.area === state.area);
   if (state.best) {
-    const rank = { go: 0, marg: 1, no: 2, closed: 3 };
+    const rank = { go: 0, marg: 1, off: 2, no: 3, closed: 4 };
     list = list.slice().sort((a, b) => rank[a.verdict] - rank[b.verdict] || b.goHours - a.goHours);
   }
 
@@ -815,7 +826,7 @@ function renderDay() {
     const focusHour = (date === now.date && a.hours.find(h => h.hour === now.hour))
       || (a.win && a.hours.find(h => h.hour === Math.floor((a.win[0] + a.win[1] - 1) / 2)))
       || a.hours.find(h => h.hour === 13) || a.hours[Math.floor(a.hours.length / 2)];
-    const pill = { go: "Flyable", marg: "Marginal", no: "No", closed: "Closed" }[a.verdict];
+    const pill = { go: "Flyable", marg: "Marginal", off: "Light, off sector", no: "No", closed: "Closed" }[a.verdict];
     const win = a.win && a.verdict !== "closed" ? `<span class="window">${hh(a.win[0])} to ${hh(a.win[1])}</span>` : "";
     const why = a.why ? `<span class="why">${esc(a.why)}</span>` : "";
     const sector = s.good.join(" ") + (s.marginal.length ? " (" + s.marginal.join(" ") + ")" : "");
@@ -833,7 +844,7 @@ function renderDay() {
     const mGo = mv.filter(m => m.verdict === "go").length;
     const agree = mv.length ? `<span class="why">${mGo} of ${mv.length} other models flyable</span>` : "";
     const chips = mv.length ? `<div class="models">${mv.map(m =>
-      `<span class="mchip ${m.verdict === "no" ? "" : m.verdict}">${esc(m.label)} ${m.verdict === "go" ? m.win[0] + "–" + m.win[1] : m.verdict === "marg" ? "marg." : m.verdict === "closed" ? "closed" : "no"}</span>`).join("")}</div>` : "";
+      `<span class="mchip ${m.verdict === "no" ? "" : m.verdict}">${esc(m.label)} ${m.verdict === "go" ? m.win[0] + "–" + m.win[1] : m.verdict === "marg" ? "marg." : m.verdict === "off" ? "light off" : m.verdict === "closed" ? "closed" : "no"}</span>`).join("")}</div>` : "";
     const near = nearStations(s);
     const stLine = x => {
       const v = judge(s, { speed: x.st.speed, gust: x.st.speed, dir: x.st.dir, rain: 0, code: 0 });
